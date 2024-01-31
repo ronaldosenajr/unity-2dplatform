@@ -18,13 +18,16 @@ public class HealthPickup : MonoBehaviour
     {
         Damagable damageable = other.GetComponent<Damagable>();
 
-        if (damageable)
+        if (damageable && damageable.Health < damageable.MaxHealth)
         {
             bool wasHealed = damageable.Heal(healthRestore);
             if (wasHealed)
+            {
                 if (pickupSource)
                     AudioSource.PlayClipAtPoint(pickupSource.clip, transform.position, pickupSource.volume);
+
                 Destroy(gameObject);
+            }
         }
     }
 

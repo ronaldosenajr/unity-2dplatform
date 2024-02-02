@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
     public float runSpeed = 8f;
     public float airWalkSpeed = 3f;
     public float jumpImpulse = 10f;
+    public float gravityScaleOnPlatform = 50f;
 
     public float currentMoveSpeed { get
     {
@@ -75,6 +76,34 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private Rigidbody2D _platformRb;
+    public Rigidbody2D PlatformRb {
+        get
+        {
+            return _platformRb;
+        }
+        set
+        {
+            _platformRb = value;
+            if (value)
+            {
+                rb.velocity = value.velocity + rb.velocity;
+            }
+        }
+    }
+    [SerializeField]
+    private bool _isOnPlatform = false;
+    public bool IsOnPlatform {
+        get
+        {
+            return _isOnPlatform;
+        }
+        set
+        {
+            _isOnPlatform = value;
+        }
+    }
+
     [SerializeField]
     private bool _isMoving = false;
     [SerializeField]
@@ -97,7 +126,23 @@ public class PlayerController : MonoBehaviour
     void FixedUpdate()
     {
         if (!damageable.IsHit) {
-            rb.velocity = new Vector2(moveInput.x * currentMoveSpeed, rb.velocity.y);
+            float targetVelocityX = moveInput.x * currentMoveSpeed;
+            float targetVelocityY = rb.velocity.y;
+            if (IsOnPlatform)
+            {
+                // se o jogador estiver indo na mesma direção que a plataforma, a velocidade da plataforma é somada à velocidade do jogador
+                if (targetVelocityX > 0 && PlatformRb.velocity.x > 0 || targetVelocityX < 0 && PlatformRb.velocity.x < 0)
+                    targetVelocityX += PlatformRb.velocity.x / 2.0f;
+                // se o jogador estiver indo na direção oposta à da plataforma, a velocidade da plataforma é subtraída da velocidade do jogador
+                else if (targetVelocityX > 0 && PlatformRb.velocity.x < 0 || targetVelocityX < 0 && PlatformRb.velocity.x > 0)
+                    targetVelocityX += PlatformRb.velocity.x;
+                // se o jogador estiver parado, a velocidade da plataforma é mantida
+                else if (targetVelocityX == 0)
+                    targetVelocityX += PlatformRb.velocity.x;
+                // a velocidade vertical e substituída pela velocidade da plataforma
+                targetVelocityY = PlatformRb.velocity.y;
+            }
+            rb.velocity = new Vector2(targetVelocityX, targetVelocityY);
             animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
 
         }
@@ -157,7 +202,18 @@ public class PlayerController : MonoBehaviour
 		if (context.started && touchingDirections.IsGrounded && CanMove)
 		{
 			animator.SetTrigger(AnimationStrings.jumpTrigger);
-			rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
+
+            float impulse = jumpImpulse;
+
+            if (IsOnPlatform)
+            {
+                impulse += PlatformRb.velocity.y / 2;
+                IsOnPlatform = false;
+                PlatformRb = null;
+            }
+
+            rb.velocity = new Vector2(rb.velocity.x, impulse);
+
 		}
 	}
 

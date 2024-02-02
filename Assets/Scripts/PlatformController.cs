@@ -9,10 +9,11 @@ public class PlatformController : MonoBehaviour
     public int speed = 5;
     public float waitDuration = 0.5f;
     public bool isClosed = true;
+    public bool spriteInFirstPoint = true;
     public float distanceToChange = 0.1f;
 
     private int currentPoint = 0;
-    private Vector2 targetPos;
+    private Vector3 targetPos;
 
     private  Vector2 moveDirection;
     private Rigidbody2D rb;
@@ -79,7 +80,7 @@ public class PlatformController : MonoBehaviour
 
     void Direction()
     {
-        moveDirection = (points[currentPoint].position - transform.position).normalized;
+        moveDirection = (targetPos - transform.position).normalized;
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -112,6 +113,17 @@ public class PlatformController : MonoBehaviour
     void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
+
+        if (spriteInFirstPoint)
+        {
+            transform.position = points[0].position;
+        }
+        else
+        {
+            transform.position = points[points.Length - 1].position;
+        }
+
+
         // Draw a line between the points if not closed path
         if (!isClosed)
         {
